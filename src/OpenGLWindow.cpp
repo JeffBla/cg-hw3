@@ -5,6 +5,7 @@
 #include "Utils/Compilers.hpp"
 #include "Utils/Global.hpp"
 #include "Utils/StringFormat/StringFormat.hpp"
+#include "Utils/imguiSliderFloat_GetterSetter.hpp"
 
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -349,6 +350,10 @@ void OpenGLWindow::windowImguiMain()
 
     windowImguiGeneralSetting();
 
+    ImGui::Separator();
+
+    windowImguiModelSetting();
+
     ImGui::End();
 }
 
@@ -372,7 +377,23 @@ void OpenGLWindow::windowImguiGeneralSetting()
     }
 }
 
-void OpenGLWindow::windowImguiModelLoader() {}
+void OpenGLWindow::_windowImguiModelSetting(std::shared_ptr<Joint> &joint)
+{
+    ImGui::Text("%s", joint->getName().c_str());
+    ImGui::SliderFloat3(("Position##" + joint->getName()).c_str(), glm::value_ptr(joint->getOffset()), -10.0f, 10.0f);
+    ImGui::SliderFloat3(("Rotation##" + joint->getName()).c_str(), glm::value_ptr(joint->getRotation()), -180.0f, 180.0f);
+    ImGui::SliderFloat3(("Scale##" + joint->getName()).c_str(), joint.get(), &Joint::getSize, &Joint::setSize, 0.1f, 5.0f);
+    ImGui::Separator();
+     
+    for(auto& child : joint->getChildren()) {
+        _windowImguiModelSetting(child);
+    }
+}
+void OpenGLWindow::windowImguiModelSetting() 
+{
+    auto animal_root = animal_->getRootJoint();
+    _windowImguiModelSetting(animal_root);
+}
 
 void OpenGLWindow::windowRenderLateUpdate() {}
 
@@ -383,6 +404,8 @@ void OpenGLWindow::windowRenderImguiUpdate()
     ImGui::NewFrame();
 
     windowImguiGeneralSetting();
+
+    windowImguiModelSetting();
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

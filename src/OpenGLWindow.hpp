@@ -71,7 +71,8 @@ private:
 
     void windowImguiMain();
     void windowImguiGeneralSetting();
-    void windowImguiModelLoader();
+    void _windowImguiModelSetting(std::shared_ptr<Joint> &joint);
+    void windowImguiModelSetting();
 
     void clearColor();
 
