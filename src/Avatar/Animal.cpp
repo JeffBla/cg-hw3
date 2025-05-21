@@ -36,47 +36,47 @@ std::shared_ptr<Joint> Animal::createBoneHierarchy() {
     
     // Create head
     auto headModel = createBodyPartModel("head", glm::vec3(0.75f, 0.75f, 0.75f), texturePath);
-    auto head = std::make_unique<Joint>("head", glm::vec3(0.0f, 1.0f, 0.0f), headModel);
+    auto head = std::make_unique<Joint>("head", glm::vec3(0.0f, 2.2f, 0.0f), headModel);
     
     // Create left arm parts
     auto leftShoulderModel = createBodyPartModel("leftShoulder", glm::vec3(0.3f, 0.3f, 0.3f), texturePath);
-    auto leftShoulder = std::make_unique<Joint>("leftShoulder", glm::vec3(-0.65f, 0.5f, 0.0f), leftShoulderModel);
+    auto leftShoulder = std::make_unique<Joint>("leftShoulder", glm::vec3(-1.2f, 1.0f, 0.0f), leftShoulderModel);
     
     auto leftArmModel = createBodyPartModel("leftArm", glm::vec3(0.25f, 0.8f, 0.25f), texturePath);
-    auto leftArm = std::make_unique<Joint>("leftArm", glm::vec3(0.0f, -0.5f, 0.0f), leftArmModel);
+    auto leftArm = std::make_unique<Joint>("leftArm", glm::vec3(0.0f, -0.8f, 0.0f), leftArmModel);
     
     auto leftHandModel = createBodyPartModel("leftHand", glm::vec3(0.3f, 0.3f, 0.3f), texturePath);
-    auto leftHand = std::make_unique<Joint>("leftHand", glm::vec3(0.0f, -0.5f, 0.0f), leftHandModel);
+    auto leftHand = std::make_unique<Joint>("leftHand", glm::vec3(0.0f, -1.0f, 0.0f), leftHandModel);
     
     // Create right arm parts
     auto rightShoulderModel = createBodyPartModel("rightShoulder", glm::vec3(0.3f, 0.3f, 0.3f), texturePath);
-    auto rightShoulder = std::make_unique<Joint>("rightShoulder", glm::vec3(0.65f, 0.5f, 0.0f), rightShoulderModel);
+    auto rightShoulder = std::make_unique<Joint>("rightShoulder", glm::vec3(1.2f, 1.0f, 0.0f), rightShoulderModel);
     
     auto rightArmModel = createBodyPartModel("rightArm", glm::vec3(0.25f, 0.8f, 0.25f), texturePath);
-    auto rightArm = std::make_unique<Joint>("rightArm", glm::vec3(0.0f, -0.5f, 0.0f), rightArmModel);
+    auto rightArm = std::make_unique<Joint>("rightArm", glm::vec3(0.0f, -0.8f, 0.0f), rightArmModel);
     
     auto rightHandModel = createBodyPartModel("rightHand", glm::vec3(0.3f, 0.3f, 0.3f), texturePath);
-    auto rightHand = std::make_unique<Joint>("rightHand", glm::vec3(0.0f, -0.5f, 0.0f), rightHandModel);
+    auto rightHand = std::make_unique<Joint>("rightHand", glm::vec3(0.0f, -1.0f, 0.0f), rightHandModel);
     
     // Create left leg parts
     auto leftHipModel = createBodyPartModel("leftHip", glm::vec3(0.3f, 0.3f, 0.3f), texturePath);
-    auto leftHip = std::make_unique<Joint>("leftHip", glm::vec3(-0.4f, -0.9f, 0.0f), leftHipModel);
+    auto leftHip = std::make_unique<Joint>("leftHip", glm::vec3(-0.4f, -1.65f, 0.0f), leftHipModel);
     
     auto leftLegModel = createBodyPartModel("leftLeg", glm::vec3(0.25f, 1.0f, 0.25f), texturePath);
-    auto leftLeg = std::make_unique<Joint>("leftLeg", glm::vec3(0.0f, -0.6f, 0.0f), leftLegModel);
+    auto leftLeg = std::make_unique<Joint>("leftLeg", glm::vec3(0.0f, -1.2f, 0.0f), leftLegModel);
     
     auto leftFootModel = createBodyPartModel("leftFoot", glm::vec3(0.3f, 0.2f, 0.5f), texturePath);
-    auto leftFoot = std::make_unique<Joint>("leftFoot", glm::vec3(0.0f, -0.6f, 0.1f), leftFootModel);
+    auto leftFoot = std::make_unique<Joint>("leftFoot", glm::vec3(0.0f, -1.0f, 0.1f), leftFootModel);
     
     // Create right leg parts
     auto rightHipModel = createBodyPartModel("rightHip", glm::vec3(0.3f, 0.3f, 0.3f), texturePath);
-    auto rightHip = std::make_unique<Joint>("rightHip", glm::vec3(0.4f, -0.9f, 0.0f), rightHipModel);
+    auto rightHip = std::make_unique<Joint>("rightHip", glm::vec3(0.4f, -1.65f, 0.0f), rightHipModel);
     
     auto rightLegModel = createBodyPartModel("rightLeg", glm::vec3(0.25f, 1.0f, 0.25f), texturePath);
-    auto rightLeg = std::make_unique<Joint>("rightLeg", glm::vec3(0.0f, -0.6f, 0.0f), rightLegModel);
+    auto rightLeg = std::make_unique<Joint>("rightLeg", glm::vec3(0.0f, -1.2f, 0.0f), rightLegModel);
     
     auto rightFootModel = createBodyPartModel("rightFoot", glm::vec3(0.3f, 0.2f, 0.5f), texturePath);
-    auto rightFoot = std::make_unique<Joint>("rightFoot", glm::vec3(0.0f, -0.6f, 0.1f), rightFootModel);
+    auto rightFoot = std::make_unique<Joint>("rightFoot", glm::vec3(0.0f, -1.0f, 0.1f), rightFootModel);
     
     // Build hierarchy (bottom-up)
     leftArm->addChild(std::move(leftHand));
@@ -97,19 +97,6 @@ std::shared_ptr<Joint> Animal::createBoneHierarchy() {
     torso->addChild(std::move(rightShoulder));
     torso->addChild(std::move(leftHip));
     torso->addChild(std::move(rightHip));
-    
-    // Set initial poses if desired
-    if (auto leftShoulderChild = torso->getChild(1)) {
-        if (auto leftArmJoint = leftShoulderChild->getChild(0)) {
-            leftArmJoint->setRotation(glm::vec3(45.0f, 0.0f, 0.0f));
-        }
-    }
-    
-    if (auto rightShoulderChild = torso->getChild(2)) {
-        if (auto rightArmJoint = rightShoulderChild->getChild(0)) {
-            rightArmJoint->setRotation(glm::vec3(-45.0f, 0.0f, 0.0f));
-        }
-    }
     
     return torso;
 }
@@ -144,6 +131,8 @@ Joint::Joint(const std::string& name, const glm::vec3& offset,
     : name_(name), offset_(offset), model_(model)
 {
     size_ = model->getScale();
+    rotation_ = glm::vec3(0.0f, 0.0f, 0.0f);
+    children_.clear();
 }
 
 Joint::~Joint()
@@ -169,12 +158,17 @@ glm::mat4 Joint::getLocalTransform() const {
     
     transform = glm::translate(transform, offset_);
     
-    transform = glm::rotate(transform, glm::radians(rotation_.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    transform = glm::rotate(transform, glm::radians(rotation_.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    transform = glm::rotate(transform, glm::radians(rotation_.z), glm::vec3(0.0f, 0.0f, 1.0f));
-    
-    transform = glm::scale(transform, size_);
-    
+    const float EPSILON = 0.0001f; // Small threshold value for rotation checks
+
+    if (std::abs(rotation_.x) > EPSILON) {
+        transform = glm::rotate(transform, glm::radians(rotation_.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    }
+    if (std::abs(rotation_.y) > EPSILON) {
+        transform = glm::rotate(transform, glm::radians(rotation_.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    }
+    if (std::abs(rotation_.z) > EPSILON) {
+        transform = glm::rotate(transform, glm::radians(rotation_.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    }
     return transform;
 }
 
@@ -184,14 +178,15 @@ void Joint::setRotation(const glm::vec3& rotation) {
 
 void Joint::draw(glm::mat4 parentTransform, glm::mat4 &view, glm::mat4 &projection) {
     glm::mat4 localTransform = getLocalTransform();
-    glm::mat4 worldTransform = parentTransform * localTransform;
-    
+    glm::mat4 worldTransformNoScale = parentTransform * localTransform;
+    glm::mat4 worldTransform = glm::scale(worldTransformNoScale, size_);
+
     if (model_) {
         model_->setModelMatrix(worldTransform);
         model_->draw(view, projection);
     }
     
     for (auto& child : children_) {
-        child->draw(worldTransform, view, projection);
+        child->draw(worldTransformNoScale, view, projection);
     }
 }

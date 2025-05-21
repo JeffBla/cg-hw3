@@ -42,6 +42,9 @@ class Animal
         void setRotation(const glm::vec3 &rotation);
         void setScale(const glm::vec3 &scale);
 
+        std::shared_ptr<Joint> getRootJoint() const {
+            return rootJoint_;
+        }
 };
 
 class Joint {
@@ -54,13 +57,36 @@ public:
     
     Joint* getChild(size_t index);
 
-    glm::mat4 getLocalTransform() const;
+    std::vector<std::shared_ptr<Joint>> getChildren() const {
+        return children_;
+    }
 
-    // Set the local rotation of this joint
-    void setRotation(const glm::vec3& rotation);
+    glm::mat4 getLocalTransform() const;
     
     void draw(glm::mat4 parentTransform, glm::mat4 &view, glm::mat4 &projection);
 
+    // Set the local rotation of this joint
+    void setRotation(const glm::vec3& rotation);
+    inline glm::vec3 &getRotation() {
+        return rotation_;
+    }
+    inline glm::vec3 &getOffset() {
+        return offset_;
+    }
+    inline void setSize(glm::vec3 size) {
+        size_ = size;
+    }
+    inline glm::vec3 getSize() {
+        return size_;
+    }
+    inline std::shared_ptr<Model::Mesh> Model(){
+        return model_;
+    }
+    inline std::string getName() const {
+        return name_;
+    }
+    
+    
 private:
     std::string name_;                  // Name of the joint
     glm::vec3 offset_;                  // Offset from parent joint
