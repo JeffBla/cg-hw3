@@ -6,6 +6,8 @@
 #include "Animal.hpp"
 
 Animal::Animal(){
+    isHumanForm_ = true;
+    transformationProgress_ = 0.0f;
     create();
 }
 
@@ -18,12 +20,107 @@ Animal::~Animal(){
 void Animal::create(){
     ShaderAdder::addShader(vertexShader.c_str(), fragmentShader.c_str(), nullptr, shaders_);
    
-    rootJoint_ = createBoneHierarchy();
+    humanRootJoint_ = createBoneHierarchy();
+    pigRootJoint_ = createPigBoneHierarchy();
+
+    rootJoint_ = humanRootJoint_;
+}
+
+void Animal::toggleForm() {
+    isHumanForm_ = !isHumanForm_;
+    transformationProgress_ = 0.0001f;  // Set to a small non-zero value to trigger isTransforming()
 }
 
 void Animal::draw(glm::mat4 &view, glm::mat4 &projection){
-    if (rootJoint_) {
+    if (transformationProgress_ > 0.0f && transformationProgress_ < 1.0f) {
+        drawTransformation(view, projection);
+    } else if (rootJoint_) {
         rootJoint_->draw(glm::mat4(1.0f), view, projection);
+    }
+}
+
+void Animal::drawTransformation(glm::mat4 &view, glm::mat4 &projection) {
+    // Get the root joints for both forms
+    std::shared_ptr<Joint> sourceJoint = isHumanForm_ ? pigRootJoint_ : humanRootJoint_;
+    std::shared_ptr<Joint> targetJoint = isHumanForm_ ? humanRootJoint_ : pigRootJoint_;
+    
+    // Draw the transforming model using interpolation
+    drawTransformingJoint(sourceJoint, targetJoint, glm::mat4(1.0f), view, projection, transformationProgress_);
+}
+
+void Animal::drawTransformingJoint(
+    std::shared_ptr<Joint> sourceJoint, 
+    std::shared_ptr<Joint> targetJoint,
+    glm::mat4 parentTransform, 
+    glm::mat4 &view, 
+    glm::mat4 &projection,
+    float progress) {
+    
+    if (!sourceJoint || !targetJoint) {
+        return;
+    }
+    
+    glm::vec3 interpolatedOffset = glm::mix(sourceJoint->getOffset(), targetJoint->getOffset(), progress);
+    glm::vec3 interpolatedRotation = glm::mix(sourceJoint->getRotation(), targetJoint->getRotation(), progress);
+    glm::vec3 interpolatedSize = glm::mix(sourceJoint->getSize(), targetJoint->getSize(), progress);
+    
+    glm::mat4 localTransform = glm::mat4(1.0f);
+    localTransform = glm::translate(localTransform, interpolatedOffset);
+    
+    const float EPSILON = 0.0001f;
+    if (std::abs(interpolatedRotation.x) > EPSILON) {
+        localTransform = glm::rotate(localTransform, glm::radians(interpolatedRotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    }
+    if (std::abs(interpolatedRotation.y) > EPSILON) {
+        localTransform = glm::rotate(localTransform, glm::radians(interpolatedRotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    }
+    if (std::abs(interpolatedRotation.z) > EPSILON) {
+        localTransform = glm::rotate(localTransform, glm::radians(interpolatedRotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    }
+    
+    glm::mat4 worldTransformNoScale = parentTransform * localTransform;
+    glm::mat4 worldTransform = glm::scale(worldTransformNoScale, interpolatedSize);
+    
+    // Draw the interpolated model
+    if (sourceJoint->getModel() && targetJoint->getModel()) {
+        auto model = progress < 0.5f ? sourceJoint->getModel() : targetJoint->getModel();
+        model->setModelMatrix(worldTransform);
+        model->draw(view, projection);
+    }
+    
+    // Recursively draw children
+    // We assume both hierarchies have the same structure
+    size_t minChildCount = std::min(sourceJoint->getChildCount(), targetJoint->getChildCount());
+    
+    for (size_t i = 0; i < minChildCount; i++) {
+        auto sourceChild = sourceJoint->getChild(i);
+        auto targetChild = targetJoint->getChild(i);
+        
+        if (sourceChild && targetChild) {
+            drawTransformingJoint(
+                sourceJoint->getChildPtr(i),
+                targetJoint->getChildPtr(i),
+                worldTransformNoScale,
+                view,
+                projection,
+                progress
+            );
+        }
+    }
+}
+
+void Animal::updateTransformation(float deltaTime) {
+    // Update transformation progress (assume complete transform takes 2 seconds)
+    const float transformationSpeed = 0.5f; // 2 seconds for complete transformation
+    
+    if (transformationProgress_ < 1.0f) {
+        transformationProgress_ += deltaTime * transformationSpeed;
+        
+        // Clamp to 1.0
+        if (transformationProgress_ >= 1.0f) {
+            transformationProgress_ = 1.0f;
+            rootJoint_ = isHumanForm_ ? humanRootJoint_ : pigRootJoint_;
+        }
     }
 }
 
@@ -101,6 +198,98 @@ std::shared_ptr<Joint> Animal::createBoneHierarchy() {
     return torso;
 }
 
+
+std::shared_ptr<Joint> Animal::createPigBoneHierarchy() {
+    // Pig model will be on all fours with distinctive pig features
+    
+    // Create torso (root) - larger and longer for pig body
+    auto torsoModel = createBodyPartModel("pigTorso", glm::vec3(1.2f, 0.8f, 1.8f), pigTexturePath);
+    auto torso = std::make_shared<Joint>("pigTorso", glm::vec3(0.0f, 0.0f, 0.0f), torsoModel);
+    
+    // Create head - more elongated for pig snout
+    auto headModel = createBodyPartModel("pigHead", glm::vec3(0.9f, 0.6f, 1.0f), pigTexturePath);
+    auto head = std::make_shared<Joint>("pigHead", glm::vec3(0.0f, 0.6f, 1.4f), headModel);
+    head->setRotation(glm::vec3(0.0f, 0.0f, 0.0f)); // Looking forward
+    
+    // Create snout
+    auto snoutModel = createBodyPartModel("pigSnout", glm::vec3(0.5f, 0.3f, 0.6f), pigTexturePath);
+    auto snout = std::make_shared<Joint>("pigSnout", glm::vec3(0.0f, -0.1f, 0.7f), snoutModel);
+    
+    // Create ears
+    auto leftEarModel = createBodyPartModel("leftEar", glm::vec3(0.3f, 0.1f, 0.3f), pigTexturePath);
+    auto leftEar = std::make_shared<Joint>("leftEar", glm::vec3(-0.4f, 0.4f, 0.0f), leftEarModel);
+    leftEar->setRotation(glm::vec3(0.0f, 0.0f, -30.0f)); // Tilt outward
+    
+    auto rightEarModel = createBodyPartModel("rightEar", glm::vec3(0.3f, 0.1f, 0.3f), pigTexturePath);
+    auto rightEar = std::make_shared<Joint>("rightEar", glm::vec3(0.4f, 0.4f, 0.0f), rightEarModel);
+    rightEar->setRotation(glm::vec3(0.0f, 0.0f, 30.0f)); // Tilt outward
+    
+    // Create front legs
+    auto frontLeftLegModel = createBodyPartModel("frontLeftLeg", glm::vec3(0.25f, 0.6f, 0.25f), pigTexturePath);
+    auto frontLeftLeg = std::make_shared<Joint>("frontLeftLeg", glm::vec3(-0.5f, -0.7f, 0.8f), frontLeftLegModel);
+    
+    auto frontLeftFootModel = createBodyPartModel("frontLeftFoot", glm::vec3(0.3f, 0.2f, 0.3f), pigTexturePath);
+    auto frontLeftFoot = std::make_shared<Joint>("frontLeftFoot", glm::vec3(0.0f, -0.7f, 0.0f), frontLeftFootModel);
+    
+    auto frontRightLegModel = createBodyPartModel("frontRightLeg", glm::vec3(0.25f, 0.6f, 0.25f), pigTexturePath);
+    auto frontRightLeg = std::make_shared<Joint>("frontRightLeg", glm::vec3(0.5f, -0.7f, 0.8f), frontRightLegModel);
+    
+    auto frontRightFootModel = createBodyPartModel("frontRightFoot", glm::vec3(0.3f, 0.2f, 0.3f), pigTexturePath);
+    auto frontRightFoot = std::make_shared<Joint>("frontRightFoot", glm::vec3(0.0f, -0.7f, 0.0f), frontRightFootModel);
+    
+    // Create hind legs
+    auto hindLeftLegModel = createBodyPartModel("hindLeftLeg", glm::vec3(0.25f, 0.6f, 0.25f), pigTexturePath);
+    auto hindLeftLeg = std::make_shared<Joint>("hindLeftLeg", glm::vec3(-0.5f, -0.7f, -0.8f), hindLeftLegModel);
+    
+    auto hindLeftFootModel = createBodyPartModel("hindLeftFoot", glm::vec3(0.3f, 0.2f, 0.3f), pigTexturePath);
+    auto hindLeftFoot = std::make_shared<Joint>("hindLeftFoot", glm::vec3(0.0f, -0.7f, 0.0f), hindLeftFootModel);
+    
+    auto hindRightLegModel = createBodyPartModel("hindRightLeg", glm::vec3(0.25f, 0.6f, 0.25f), pigTexturePath);
+    auto hindRightLeg = std::make_shared<Joint>("hindRightLeg", glm::vec3(0.5f, -0.7f, -0.8f), hindRightLegModel);
+    
+    auto hindRightFootModel = createBodyPartModel("hindRightFoot", glm::vec3(0.3f, 0.2f, 0.3f), pigTexturePath);
+    auto hindRightFoot = std::make_shared<Joint>("hindRightFoot", glm::vec3(0.0f, -0.7f, 0.0f), hindRightFootModel);
+    
+    // Create tail - curly!
+    auto tailBaseModel = createBodyPartModel("tailBase", glm::vec3(0.15f, 0.15f, 0.15f), pigTexturePath);
+    auto tailBase = std::make_shared<Joint>("tailBase", glm::vec3(0.0f, 0.2f, -1.0f), tailBaseModel);
+    tailBase->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
+    
+    auto tailMidModel = createBodyPartModel("tailMid", glm::vec3(0.12f, 0.12f, 0.12f), pigTexturePath);
+    auto tailMid = std::make_shared<Joint>("tailMid", glm::vec3(0.0f, 0.2f, -0.1f), tailMidModel);
+    tailMid->setRotation(glm::vec3(0.0f, 0.0f, 45.0f));
+    
+    auto tailEndModel = createBodyPartModel("tailEnd", glm::vec3(0.1f, 0.1f, 0.1f), pigTexturePath);
+    auto tailEnd = std::make_shared<Joint>("tailEnd", glm::vec3(0.1f, 0.1f, 0.0f), tailEndModel);
+    tailEnd->setRotation(glm::vec3(0.0f, 0.0f, 45.0f));
+    
+    // Build hierarchy
+    // Head parts
+    head->addChild(snout);
+    head->addChild(leftEar);
+    head->addChild(rightEar);
+    
+    // Legs
+    frontLeftLeg->addChild(frontLeftFoot);
+    frontRightLeg->addChild(frontRightFoot);
+    hindLeftLeg->addChild(hindLeftFoot);
+    hindRightLeg->addChild(hindRightFoot);
+    
+    // Tail
+    tailMid->addChild(tailEnd);
+    tailBase->addChild(tailMid);
+    
+    // Add all to torso
+    torso->addChild(head);
+    torso->addChild(frontLeftLeg);
+    torso->addChild(frontRightLeg);
+    torso->addChild(hindLeftLeg);
+    torso->addChild(hindRightLeg);
+    torso->addChild(tailBase);
+    
+    return torso;
+}
+
 std::shared_ptr<Model::Mesh> Animal::createBodyPartModel(
     const std::string& name,
     const glm::vec3& size,
@@ -151,6 +340,19 @@ Joint* Joint::getChild(size_t index)
         return children_[index].get();
     }
     return nullptr;
+}
+
+std::shared_ptr<Joint> Joint::getChildPtr(size_t index)
+{
+    if (index < children_.size()) {
+        return children_[index];
+    }
+    return nullptr;
+}
+
+size_t Joint::getChildCount() const
+{
+    return children_.size();
 }
 
 glm::mat4 Joint::getLocalTransform() const {

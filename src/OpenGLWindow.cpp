@@ -389,8 +389,19 @@ void OpenGLWindow::_windowImguiModelSetting(std::shared_ptr<Joint> &joint)
         _windowImguiModelSetting(child);
     }
 }
+
+bool animal_transform_state = false;
 void OpenGLWindow::windowImguiModelSetting() 
 {
+    ImGui::Text("Model Settings");
+    ImGui::Separator();
+
+    if(ImGui::Checkbox("Transforming", &animal_transform_state)){
+        animal_->toggleForm();
+    }
+
+    ImGui::Separator();
+
     auto animal_root = animal_->getRootJoint();
     _windowImguiModelSetting(animal_root);
 }
@@ -443,7 +454,8 @@ void OpenGLWindow::windowRenderUpdate()
     glm::mat4 projection{
         glm::perspective(glm::radians(45.0f), aspectRatio(), 0.1f, 100.0f)};
 
-
     // draw models
     animal_->draw(view, projection);
+    if(animal_->isTransforming())
+        animal_->updateTransformation(deltaTime_);
 }
