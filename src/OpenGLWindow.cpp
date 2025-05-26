@@ -390,14 +390,19 @@ void OpenGLWindow::_windowImguiModelSetting(std::shared_ptr<Joint> &joint)
     }
 }
 
-bool animal_transform_state = false;
 void OpenGLWindow::windowImguiModelSetting() 
 {
     ImGui::Text("Model Settings");
     ImGui::Separator();
 
-    if(ImGui::Checkbox("Transforming", &animal_transform_state)){
-        animal_->toggleForm();
+    ImGui::RadioButton("Transform 1", (int *) &animal_->getCurrentFrame(), 0); ImGui::SameLine();
+    ImGui::RadioButton("Transform 2", (int *) &animal_->getCurrentFrame(), 1); ImGui::SameLine();
+    ImGui::RadioButton("Transform 3", (int *) &animal_->getCurrentFrame(), 2);
+    animal_->TransformToFrame(static_cast<Animal::TransformFrame>(animal_->getCurrentFrame()));
+
+    static bool isAnimating = false;
+    if(ImGui::Checkbox("Animate", &isAnimating)){
+        animal_->Animate();
     }
 
     ImGui::Separator();

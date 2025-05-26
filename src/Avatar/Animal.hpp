@@ -5,21 +5,32 @@
 #include "OpenGL/OpenGLTexture.hpp"
 #include "Model/Mesh.hpp"
 
+#include <glm/gtx/matrix_decompose.hpp>
+
 #include <vector>
 #include <string>
 #include <memory>
+#include <map>
 
 class Joint;
 
 class Animal
 {
     public:
+        enum TransformFrame{
+            FRAME1, FRAME2, FRAME3
+        };
+        size_t transformFrameSize = 3;
+    public:
         Animal();
         ~Animal();
 
-        void toggleForm(); // Start transformation between human and pig
+        void TransformToFrame(TransformFrame frame);
         void updateTransformation(float deltaTime); 
-        bool isTransforming() const { return transformationProgress_ > 0.0f && transformationProgress_ < 1.0f; }
+        inline bool isTransforming() const { return transformationProgress_ > 0.0f && transformationProgress_ < 1.0f; }
+
+        void Animate();
+        inline bool isAnimating() const { return isAnimating_; }
 
         void draw(glm::mat4 &view, glm::mat4 &projection);
         void setPosition(const glm::vec3 &position);
@@ -28,6 +39,10 @@ class Animal
 
         std::shared_ptr<Joint> getRootJoint() const {
             return rootJoint_;
+        }
+
+        inline TransformFrame &getCurrentFrame() {
+            return currentFrame;
         }
     private:
         std::vector<std::shared_ptr<Model::Mesh>> models_;
@@ -44,10 +59,7 @@ class Animal
         // Root joint of the skeleton
         std::shared_ptr<Joint> rootJoint_;  
 
-        std::shared_ptr<Joint> humanRootJoint_;  
-        std::shared_ptr<Joint> pigRootJoint_;  
-        
-        bool isHumanForm_;
+        bool isAnimating_ = false; 
         float transformationProgress_; // 0.0f = source form, 1.0f = target form
 
         void create();
@@ -56,15 +68,23 @@ class Animal
             const glm::vec3& size,
             const std::string& texturePath);
         std::shared_ptr<Joint> createBoneHierarchy();
-        std::shared_ptr<Joint> createPigBoneHierarchy();
     
-        void drawTransformation(glm::mat4 &view, glm::mat4 &projection);
-        void drawTransformingJoint(std::shared_ptr<Joint> sourceJoint, 
-                                    std::shared_ptr<Joint> targetJoint,
-                                    glm::mat4 parentTransform, 
-                                    glm::mat4 &view, 
-                                    glm::mat4 &projection,
-                                    float progress);
+        struct TransformFrameData {
+            glm::vec3 offset;
+            glm::vec3 rotation;
+            glm::vec3 size;
+
+            TransformFrameData() : offset(0.0f), rotation(0.0f), size(1.0f) {}
+            TransformFrameData(glm::vec3 offset, glm::vec3 rotation, glm::vec3 size)
+                : offset(offset), rotation(rotation), size(size) {}
+        };
+
+        TransformFrame currentFrame;
+        std::vector<std::map<std::string, std::shared_ptr<TransformFrameData>>> transformFrames_;
+
+        void setupTransformFrames();
+        void Transformation();
+        void TransformingJoint(std::shared_ptr<Joint> joint, float progress);
 };
 
 class Joint 
@@ -91,6 +111,9 @@ class Joint
         void setRotation(const glm::vec3& rotation);
         inline glm::vec3 &getRotation() {
             return rotation_;
+        }
+        inline void setOffset(glm::vec3 offset) {
+            offset_ = offset;
         }
         inline glm::vec3 &getOffset() {
             return offset_;
