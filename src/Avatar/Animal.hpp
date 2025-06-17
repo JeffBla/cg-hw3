@@ -25,7 +25,7 @@ class Animal
         Animal();
         ~Animal();
 
-        void TransformToFrame(TransformFrame frame);
+        void TransformToFrame(int frame);
         void updateTransformation(float deltaTime); 
         inline bool isTransforming() const { return transformationProgress_ > 0.0f && transformationProgress_ < 1.0f; }
 
@@ -41,8 +41,11 @@ class Animal
             return rootJoint_;
         }
 
-        inline TransformFrame &getCurrentFrame() {
+        inline int getCurrentFrame() const{
             return currentFrame;
+        }
+        inline void setCurrentFrame(int frame) {
+            currentFrame = static_cast<TransformFrame>(frame);
         }
     private:
         std::vector<std::shared_ptr<Model::Mesh>> models_;

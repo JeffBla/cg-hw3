@@ -25,12 +25,12 @@ void Animal::create(){
     setupTransformFrames();
 }
 
-void Animal::TransformToFrame(TransformFrame frame)
+void Animal::TransformToFrame(int frame)
 {
     if(currentFrame == frame) {
         return;
     }
-    currentFrame = frame;
+    currentFrame = static_cast<TransformFrame>(frame);
     transformationProgress_ = 0.0001f;
 }
 

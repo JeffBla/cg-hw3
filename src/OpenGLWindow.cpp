@@ -6,6 +6,7 @@
 #include "Utils/Global.hpp"
 #include "Utils/StringFormat/StringFormat.hpp"
 #include "Utils/imguiSliderFloat_GetterSetter.hpp"
+#include "Utils/imguiRadioButton_GetterSetter.hpp"
 
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -395,10 +396,14 @@ void OpenGLWindow::windowImguiModelSetting()
     ImGui::Text("Model Settings");
     ImGui::Separator();
 
-    ImGui::RadioButton("Transform 1", (int *) &animal_->getCurrentFrame(), 0); ImGui::SameLine();
-    ImGui::RadioButton("Transform 2", (int *) &animal_->getCurrentFrame(), 1); ImGui::SameLine();
-    ImGui::RadioButton("Transform 3", (int *) &animal_->getCurrentFrame(), 2);
-    animal_->TransformToFrame(static_cast<Animal::TransformFrame>(animal_->getCurrentFrame()));
+    ImGui::RadioButton("Transform 1", animal_.get(), &Animal::getCurrentFrame,
+                        0, &Animal::TransformToFrame); 
+    ImGui::SameLine();
+    ImGui::RadioButton("Transform 2", animal_.get(), &Animal::getCurrentFrame,
+                        1, &Animal::TransformToFrame); 
+    ImGui::SameLine();
+    ImGui::RadioButton("Transform 3", animal_.get(), &Animal::getCurrentFrame,
+                        2, &Animal::TransformToFrame); 
 
     static bool isAnimating = false;
     if(ImGui::Checkbox("Animate", &isAnimating)){
